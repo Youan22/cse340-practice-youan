@@ -5,22 +5,36 @@ import path from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 3000;
+const mode = process.env.MODE || "production";
+const port = process.env.PORT || 3000;
 const app = express();
 
 const name = process.env.NAME; // <-- NEW
+// Set the view engine to EJS
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
 app.use(express.static(path.join(__dirname, "public")));
+
+// Home page
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/home.html"));
+  const title = "Home Page";
+  const content = "<h1>Welcome to the Home Page</h1>";
+  res.render("index", { title, content, mode, port });
 });
 
-app.get("/page1", (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/page1.html"));
+// About page
+app.get("/about", (req, res) => {
+  const title = "About Page";
+  const content = "<h1>Welcome to the About Page</h1>";
+  res.render("index", { title, content, mode, port });
 });
 
-app.get("/page2", (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/page2.html"));
+// Contact page
+app.get("/contact", (req, res) => {
+  const title = "Contact Page";
+  const content = "<h1>Welcome to the Contact Page</h1>";
+  res.render("index", { title, content, mode, port });
 });
 
 app.get("/", (req, res) => {
@@ -39,6 +53,6 @@ app.get("/Home", (req, res) => {
   res.send("This is the Home page!");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://127.0.0.1:${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running on http://127.0.0.1:${port}`);
 });
