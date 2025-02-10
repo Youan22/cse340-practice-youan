@@ -23,3 +23,9 @@
     <li><a href="/account/john/doe">Account (Bad ID)</a></li>
   </ul>
 </nav>
+
+<% if (timestamp) { %>
+<div class="timestamp">
+  <p>Request received at: <%= timestamp %></p>
+</div>
+<% } %>

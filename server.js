@@ -57,26 +57,31 @@ app.set("views", path.join(__dirname, "views"));
 
 // app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, "public")));
+// Middleware to add timestamp
+app.use((req, res, next) => {
+  req.timestamp = new Date().toISOString(); // Add timestamp in ISO format
+  next();
+});
 
 // Home page
 app.get("/", (req, res) => {
   const title = "Home Page";
   const content = "<h1>Welcome to the Home Page</h1>";
-  res.render("index", { title, content, mode, port });
+  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
 });
 
 // About page
 app.get("/about", (req, res) => {
   const title = "About Page";
   const content = "<h1>Welcome to the About Page</h1>";
-  res.render("index", { title, content, mode, port });
+  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
 });
 
 // Contact page
 app.get("/contact", (req, res) => {
   const title = "Contact Page";
   const content = "<h1>Welcome to the Contact Page</h1>";
-  res.render("index", { title, content, mode, port });
+  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
 });
 
 // Account page route with ID and name validation
@@ -88,7 +93,7 @@ app.get("/account/:name/:id", validateName, validateId, (req, res) => {
     <h1>Welcome, ${name}!</h1>
     <p>Your account ID is ${id}, which is an ${isEven} number.</p>
   `;
-  res.render("index", { title, content, mode, port });
+  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
 });
 
 // Greeting route
