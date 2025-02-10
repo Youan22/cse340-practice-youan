@@ -11,23 +11,27 @@ const app = express();
 
 const name = process.env.NAME; // <-- NEW
 
-// ID validation middleware
 const validateId = (req, res, next) => {
   const { id } = req.params;
-  if (isNaN(id)) {
+  console.log("ID passed:", id); // <-- Log the id value
+  const idNumber = Number(id);
+  if (isNaN(idNumber)) {
     const error = new Error("Invalid ID: must be a number.");
     error.status = 400;
     next(error);
     return;
   }
+  req.params.id = idNumber; // Convert id to number
   next();
 };
 
-// Middleware to validate name
 const validateName = (req, res, next) => {
   const { name } = req.params;
-  if (!/^[a-zA-Z]+$/.test(name)) {
-    const error = new Error("Invalid name: must only contain letters.");
+  // Adjusted regex to allow spaces and numbers in the name
+  if (!/^[a-zA-Z0-9\s]+$/.test(name)) {
+    const error = new Error(
+      "Invalid name: must only contain letters, numbers, and spaces."
+    );
     error.status = 400;
     next(error);
     return;
@@ -51,6 +55,7 @@ app.use((req, res, next) => {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Home page
@@ -71,6 +76,18 @@ app.get("/about", (req, res) => {
 app.get("/contact", (req, res) => {
   const title = "Contact Page";
   const content = "<h1>Welcome to the Contact Page</h1>";
+  res.render("index", { title, content, mode, port });
+});
+
+// Account page route with ID and name validation
+app.get("/account/:name/:id", validateName, validateId, (req, res) => {
+  const title = "Account Page";
+  const { name, id } = req.params;
+  const isEven = id % 2 === 0 ? "even" : "odd";
+  const content = `
+    <h1>Welcome, ${name}!</h1>
+    <p>Your account ID is ${id}, which is an ${isEven} number.</p>
+  `;
   res.render("index", { title, content, mode, port });
 });
 
@@ -103,6 +120,12 @@ if (mode.includes("dev")) {
     console.error("Failed to start WebSocket server:", error);
   }
 }
+
+// Error handling middleware (for invalid requests)
+app.use((err, req, res, next) => {
+  console.error(err.message);
+  res.status(err.status || 500).send(err.message);
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://127.0.0.1:${port}`);
