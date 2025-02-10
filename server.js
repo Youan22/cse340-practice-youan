@@ -10,6 +10,13 @@ const port = process.env.PORT || 3000;
 const app = express();
 
 const name = process.env.NAME; // <-- NEW
+
+// Middleware (Placed near the top before routes)
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
 // Set the view engine to EJS
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -37,20 +44,14 @@ app.get("/contact", (req, res) => {
   res.render("index", { title, content, mode, port });
 });
 
-app.get("/", (req, res) => {
-  res.send(`Hello, ${name}!`); // <-- UPDATED
+// Greeting route
+app.get("/greet", (req, res) => {
+  res.send(`Hello, ${name || "Guest"}!`);
 });
 
+// New route
 app.get("/new-route", (req, res) => {
   res.send("This is a new route!");
-});
-
-app.get("/about", (req, res) => {
-  res.send("This is the about page!");
-});
-
-app.get("/Home", (req, res) => {
-  res.send("This is the Home page!");
 });
 
 // When in development mode, start a WebSocket server for live reloading
