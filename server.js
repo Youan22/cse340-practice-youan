@@ -11,9 +11,39 @@ const app = express();
 
 const name = process.env.NAME; // <-- NEW
 
+// ID validation middleware
+const validateId = (req, res, next) => {
+  const { id } = req.params;
+  if (isNaN(id)) {
+    const error = new Error("Invalid ID: must be a number.");
+    error.status = 400;
+    next(error);
+    return;
+  }
+  next();
+};
+
+// Middleware to validate name
+const validateName = (req, res, next) => {
+  const { name } = req.params;
+  if (!/^[a-zA-Z]+$/.test(name)) {
+    const error = new Error("Invalid name: must only contain letters.");
+    error.status = 400;
+    next(error);
+    return;
+  }
+  next();
+};
+
 // Middleware (Placed near the top before routes)
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
+// Global middleware to set a custom header
+app.use((req, res, next) => {
+  res.setHeader("X-Powered-By", "Express Middleware Tutorial");
   next();
 });
 
