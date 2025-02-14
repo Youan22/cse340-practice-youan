@@ -1,0 +1,7 @@
+.dev-mode-warning {
+  background-color: lightgrey;
+  color: red;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+}

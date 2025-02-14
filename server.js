@@ -1,110 +1,68 @@
+// Import required modules using ESM import syntax
 import express from "express";
-import { fileURLToPath } from "url";
 import path from "path";
+import { fileURLToPath } from "url";
 
+// Import all other required modules: Route handlers, Middleware, etc.
+import { configMode } from "./src/middleware/config-mode.js";
+import baseRoute from "./src/routes/index.js";
+import layouts from "./src/middleware/layouts.js";
+import {
+  notFoundHandler,
+  globalErrorHandler,
+} from "./src/middleware/error-handler.js";
+
+// Get the current file path and directory name
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const mode = process.env.MODE || "production";
-const port = process.env.PORT || 3000;
+// Create an instance of an Express application
 const app = express();
 
-const name = process.env.NAME; // <-- NEW
+// Apply middleware for dynamic script & style injection
+app.use(configMode);
 
-const validateId = (req, res, next) => {
-  const { id } = req.params;
-  console.log("ID passed:", id); // <-- Log the id value
-  const idNumber = Number(id);
-  if (isNaN(idNumber)) {
-    const error = new Error("Invalid ID: must be a number.");
-    error.status = 400;
-    next(error);
-    return;
-  }
-  req.params.id = idNumber; // Convert id to number
-  next();
-};
-
-const validateName = (req, res, next) => {
-  const { name } = req.params;
-  // Adjusted regex to allow spaces and numbers in the name
-  if (!/^[a-zA-Z0-9\s]+$/.test(name)) {
-    const error = new Error(
-      "Invalid name: must only contain letters, numbers, and spaces."
-    );
-    error.status = 400;
-    next(error);
-    return;
-  }
-  next();
-};
-
-// Middleware (Placed near the top before routes)
-app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
-  next();
-});
-
-// Global middleware to set a custom header
-app.use((req, res, next) => {
-  res.setHeader("X-Powered-By", "Express Middleware Tutorial");
-  next();
-});
-
-// Set the view engine to EJS
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-
-// app.use(express.static(path.join(__dirname, "public")));
+// -------------------------
+// 1) STATIC FILE SERVING
+// -------------------------
 app.use(express.static(path.join(__dirname, "public")));
-// Middleware to add timestamp
-app.use((req, res, next) => {
-  req.timestamp = new Date().toISOString(); // Add timestamp in ISO format
-  next();
-});
 
-// Home page
-app.get("/", (req, res) => {
-  const title = "Home Page";
-  const content = "<h1>Welcome to the Home Page</h1>";
-  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
-});
+// Define static paths for efficient 404 handling
+app.set("staticPaths", ["/images", "/css", "/js"]);
 
-// About page
-app.get("/about", (req, res) => {
-  const title = "About Page";
-  const content = "<h1>Welcome to the About Page</h1>";
-  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
-});
+// -------------------------
+// 2) VIEW ENGINE SETUP
+// -------------------------
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "src/views"));
 
-// Contact page
-app.get("/contact", (req, res) => {
-  const title = "Contact Page";
-  const content = "<h1>Welcome to the Contact Page</h1>";
-  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
-});
+// -------------------------
+// 3) LAYOUTS MIDDLEWARE
+// -------------------------
+app.set("layout default", "default");
+app.set("layouts", path.join(__dirname, "src/views/layouts"));
+app.use(layouts);
 
-// Account page route with ID and name validation
-app.get("/account/:name/:id", validateName, validateId, (req, res) => {
-  const title = "Account Page";
-  const { name, id } = req.params;
-  const isEven = id % 2 === 0 ? "even" : "odd";
-  const content = `
-    <h1>Welcome, ${name}!</h1>
-    <p>Your account ID is ${id}, which is an ${isEven} number.</p>
-  `;
-  res.render("index", { title, content, mode, port, timestamp: req.timestamp });
-});
+// -------------------------
+// 4) ROUTES
+// -------------------------
+app.use("/", baseRoute);
 
-// Greeting route
-app.get("/greet", (req, res) => {
-  res.send(`Hello, ${name || "Guest"}!`);
-});
+// -------------------------
+// 5) ERROR HANDLING CONFIG
+// -------------------------
+// Set a limit to prevent infinite error render loops
+app.set("errorRenderLimit", 2);
 
-// New route
-app.get("/new-route", (req, res) => {
-  res.send("This is a new route!");
-});
+// Use error handlers
+app.use(notFoundHandler);
+app.use(globalErrorHandler);
+
+// -------------------------
+// 6) ENABLE LIVE RELOADING IN DEV MODE
+// -------------------------
+const mode = process.env.MODE || "production";
+const port = process.env.PORT || 3000;
 
 // When in development mode, start a WebSocket server for live reloading
 if (mode.includes("dev")) {
@@ -126,12 +84,9 @@ if (mode.includes("dev")) {
   }
 }
 
-// Error handling middleware (for invalid requests)
-app.use((err, req, res, next) => {
-  console.error(err.message);
-  res.status(err.status || 500).send(err.message);
-});
-
+// -------------------------
+// 7) START THE SERVER
+// -------------------------
 app.listen(port, () => {
-  console.log(`Server is running on http://127.0.0.1:${port}`);
+  console.log(`🚀 Server running in ${mode} mode on http://127.0.0.1:${port}`);
 });
